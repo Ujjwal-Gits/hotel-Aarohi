@@ -1,0 +1,72 @@
+// This is your Prisma schema file.
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String?
+  role      Role      @default(USER)
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+  AGENT
+}
+
+model Hotel {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  location    String
+  rating      Float    @default(0)
+  rooms       Room[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Room {
+  id          String    @id @default(uuid())
+  type        String // e.g., Deluxe, Suite, Standard
+  price       Float
+  capacity    Int
+  available   Boolean   @default(true)
+  hotelId     String
+  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Booking {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id])
+  checkIn   DateTime
+  checkOut  DateTime
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Status {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
