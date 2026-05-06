@@ -1,12 +1,18 @@
 import { Router } from 'express';
+import dashboardRoutes from './dashboard.routes';
+import galleryRoutes from './gallery.routes';
+import roomRoutes from './room.routes';
+import bookingRoutes from './booking.routes';
+import customerRoutes from './customer.routes';
+import notificationRoutes from './notification.routes';
 
 const router = Router();
 
-// Import individual route modules here
-// import authRoutes from './auth.routes';
-// import hotelRoutes from './hotel.routes';
-
-// router.use('/auth', authRoutes);
-// router.use('/hotels', hotelRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/gallery', galleryRoutes);
+router.use('/listings', roomRoutes);
+router.use('/bookings', bookingRoutes);
+router.use('/customers', customerRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;

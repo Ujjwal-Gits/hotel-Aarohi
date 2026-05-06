@@ -1,39 +1,226 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SEO from './components/common/SEO';
+import RoomsPage from './pages/Rooms';
+import RestaurantPage from './pages/Restaurant';
+import GalleryPage from './pages/Gallery';
+import BlogPage from './pages/Blog';
+import DashboardPage from './pages/Dashboard';
 
-const Navbar = () => {
-    const [isDark, setIsDark] = useState(false);
+/* ─── SCROLL TO TOP UTILITY ─── */
+const ScrollToTop = () => {
+    const { pathname } = useLocation();
 
     useEffect(() => {
-        if (isDark) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [isDark]);
+        window.scrollTo(0, 0);
+    }, [pathname]);
 
+    return null;
+};
+
+
+/* ─── CUSTOM DATE PICKER COMPONENT ─── */
+const CustomDatePicker = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    const firstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+
+    const selectDate = (day: number) => {
+        const selected = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+        const yyyy = selected.getFullYear();
+        const mm = String(selected.getMonth() + 1).padStart(2, '0');
+        const dd = String(selected.getDate()).padStart(2, '0');
+        onChange(`${yyyy}-${mm}-${dd}`);
+        setIsOpen(false);
+    };
+
+    const nextMonth = () => {
+        const next = new Date(currentMonth);
+        next.setMonth(next.getMonth() + 1);
+        setCurrentMonth(next);
+    };
+    const prevMonth = () => {
+        const prev = new Date(currentMonth);
+        prev.setMonth(prev.getMonth() - 1);
+        setCurrentMonth(prev);
+    };
+
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+    return (
+        <div className="relative w-full">
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex flex-col items-start cursor-pointer w-full text-left"
+            >
+                <label className="text-[9px] text-gray-600 dark:text-gray-400 uppercase tracking-widest font-bold mb-1">{label}</label>
+                <div className="flex items-center justify-between w-full group">
+                    <span className="text-gray-900 dark:text-white font-sans text-xs font-medium">
+                        {value ? new Date(value.replace(/-/g, '/')).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Select Date'}
+                    </span>
+                    <span className="material-icons-outlined text-gray-400 text-sm group-hover:text-primary transition-colors">calendar_today</span>
+                </div>
+            </div>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        {/* Backdrop to close */}
+                        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute bottom-full mb-4 left-0 md:left-auto md:right-0 bg-white dark:bg-[#111] border border-gray-100 dark:border-gray-800 shadow-2xl z-50 p-4 rounded-lg w-64"
+                        >
+                            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50 dark:border-gray-800">
+                                <span className="font-serif text-[13px] font-bold text-secondary dark:text-white">
+                                    {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                                </span>
+                                <div className="flex gap-1.5">
+                                    <button onClick={prevMonth} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors">
+                                        <span className="material-icons-outlined text-sm">chevron_left</span>
+                                    </button>
+                                    <button onClick={nextMonth} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors">
+                                        <span className="material-icons-outlined text-sm">chevron_right</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                                {weekDays.map(d => (
+                                    <span key={d} className="text-[10px] uppercase text-gray-400 font-bold">{d}</span>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1">
+                                {[...Array(firstDayOfMonth(currentMonth))].map((_, i) => (
+                                    <div key={`empty-${i}`} />
+                                ))}
+                                {[...Array(daysInMonth(currentMonth))].map((_, i) => {
+                                    const day = i + 1;
+                                    const y = currentMonth.getFullYear();
+                                    const m = String(currentMonth.getMonth() + 1).padStart(2, '0');
+                                    const d = String(day).padStart(2, '0');
+                                    const dateStr = `${y}-${m}-${d}`;
+                                    const isSelected = dateStr === value;
+
+                                    const now = new Date();
+                                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                                    const isToday = todayStr === dateStr;
+
+                                    return (
+                                        <button
+                                            key={day}
+                                            onClick={() => selectDate(day)}
+                                            className={`h-7 w-7 text-[11px] flex items-center justify-center rounded transition-all
+                                                ${isSelected
+                                                    ? 'bg-primary text-white font-bold shadow-lg shadow-primary/30'
+                                                    : isToday
+                                                        ? 'border border-primary text-primary font-bold hover:bg-primary/10'
+                                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
+                                                }`}
+                                        >
+                                            {day}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="mt-3 pt-3 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-[9px] uppercase tracking-widest font-bold">
+                                <button onClick={() => { onChange(''); setIsOpen(false); }} className="text-gray-300 hover:text-red-500 transition-colors">Clear</button>
+                                <button onClick={() => {
+                                    const now = new Date();
+                                    selectDate(now.getDate());
+                                }} className="text-primary hover:text-primary/70 transition-colors">Today</button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+/* ─── CUSTOM SELECT COMPONENT ─── */
+const CustomSelect = ({ label, value, options, onChange, icon }: { label: string, value: string, options: string[], onChange: (val: string) => void, icon?: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="relative w-full">
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex flex-col items-start cursor-pointer w-full text-left"
+            >
+                <label className="text-[9px] text-gray-600 dark:text-gray-400 uppercase tracking-widest font-bold mb-1">{label}</label>
+                <div className="flex items-center justify-between w-full group">
+                    <span className="text-gray-900 dark:text-white font-sans text-xs font-medium">
+                        {value}
+                    </span>
+                    <span className={`material-icons-outlined text-gray-400 text-sm group-hover:text-primary transition-all duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                        {icon || 'expand_more'}
+                    </span>
+                </div>
+            </div>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute bottom-full mb-4 left-0 w-full bg-white dark:bg-[#111] border border-gray-100 dark:border-gray-800 shadow-2xl z-50 overflow-hidden rounded-lg"
+                        >
+                            <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                {options.map((option) => (
+                                    <button
+                                        key={option}
+                                        onClick={() => {
+                                            onChange(option);
+                                            setIsOpen(false);
+                                        }}
+                                        className={`w-full text-left px-4 py-3 text-xs transition-colors border-b last:border-0 border-gray-50 dark:border-gray-800/50
+                                            ${value === option
+                                                ? 'bg-primary/10 text-primary font-bold'
+                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-black dark:hover:text-white'
+                                            }`}
+                                    >
+                                        {option}
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+
+
+const Navbar = () => {
     return (
         <nav className="fixed w-full z-50 transition-all duration-300 bg-snow-white/90 dark:bg-black/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-24">
                     <div className="flex-shrink-0 flex items-center">
-                        <a className="font-serif text-2xl tracking-widest text-black dark:text-white font-bold uppercase" href="#">Aarohi</a>
+                        <Link className="font-serif text-2xl tracking-widest text-black dark:text-white font-bold uppercase" to="/">Aarohi</Link>
                     </div>
                     <div className="hidden md:flex space-x-10 items-center">
-                        <a className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" href="#suites">Suites</a>
-                        <a className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" href="#dining">Dining</a>
-                        <a className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" href="#gallery">Gallery</a>
-                        <a className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" href="#journal">Journal</a>
+                        <Link className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" to="/rooms">Rooms</Link>
+                        <Link className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" to="/restaurant">Restaurant</Link>
+                        <Link className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" to="/gallery">Gallery</Link>
+                        <Link className="text-xs uppercase tracking-widest hover:text-gray-500 transition-colors font-medium" to="/blog">Blog</Link>
                         <button className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 px-8 py-3 uppercase text-[10px] tracking-widest font-bold transition-all">
                             Book Your Stay
-                        </button>
-                        <button
-                            className="p-2 text-gray-400 hover:text-black dark:hover:text-white flex items-center justify-center"
-                            onClick={() => setIsDark(!isDark)}
-                        >
-                            <span className="material-icons-outlined text-lg">{isDark ? 'light_mode' : 'dark_mode'}</span>
                         </button>
                     </div>
                     <div className="md:hidden flex items-center">
@@ -47,90 +234,172 @@ const Navbar = () => {
     );
 };
 
-const Header = () => (
-    <header className="relative h-screen h-[100svh] min-h-[600px] flex items-center justify-center overflow-hidden pt-24">
-        <div className="absolute inset-0 z-0">
-            <img alt="Modern glass house suite interior" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW2X1QQZnFpMvb8iHz6gGu06UTGg32F1ZKFQZu90xgLxPhmi1oLv2RnZu574GUoxjW1LatbX7fb6RsIO7PP52nT7ZlRhORi2Quv3KJZWgmIVTkhNkvwMdbd22lXzng8H-Yf0lEqhrviiYcq7J68yT3XQ8omEvTdxzFdLP18a8c3sZBSlPkvAXVVCAS3k0pUhniwAD0Z9nQHGXmCFw3B4OgVyjWtYvilyTlbe2R-9RonkRclqaJOfBuFRZYjbPzAeP8VN0hgdn14YTS" />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/40 dark:from-black/30 dark:to-black/80"></div>
-        </div>
+const Header = () => {
+    const [bookingType, setBookingType] = useState('room');
+    const [selectedHall, setSelectedHall] = useState('Hall A');
+    const [checkIn, setCheckIn] = useState('');
+    const [checkOut, setCheckOut] = useState('');
+    const [guests, setGuests] = useState('1 Guest');
+    const [eventDate, setEventDate] = useState('');
+    const [startTime, setStartTime] = useState('10:00 AM');
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-        <div className="absolute top-32 right-8 md:right-16 z-20 hidden md:block">
-            <div className="flex flex-col items-end space-y-6 text-white/90 drop-shadow-md text-right">
-                <div>
-                    <p className="text-4xl font-serif">15+</p>
-                    <p className="text-[10px] uppercase tracking-widest opacity-80">Years of Excellence</p>
-                </div>
-                <div>
-                    <p className="text-4xl font-serif">50k+</p>
-                    <p className="text-[10px] uppercase tracking-widest opacity-80">Guests Served</p>
-                </div>
+    const backgroundImages = [
+        "https://lh3.googleusercontent.com/aida-public/AB6AXuDW2X1QQZnFpMvb8iHz6gGu06UTGg32F1ZKFQZu90xgLxPhmi1oLv2RnZu574GUoxjW1LatbX7fb6RsIO7PP52nT7ZlRhORi2Quv3KJZWgmIVTkhNkvwMdbd22lXzng8H-Yf0lEqhrviiYcq7J68yT3XQ8omEvTdxzFdLP18a8c3sZBSlPkvAXVVCAS3k0pUhniwAD0Z9nQHGXmCFw3B4OgVyjWtYvilyTlbe2R-9RonkRclqaJOfBuFRZYjbPzAeP8VN0hgdn14YTS",
+        "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?q=80&w=2098&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2070&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2070&auto=format&fit=crop"
+    ];
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setActiveImageIndex((prev) => (prev + 1) % backgroundImages.length);
+        }, 7000);
+        return () => clearInterval(timer);
+    }, []);
+
+
+
+
+    return (
+        <header className="relative h-screen h-[100svh] min-h-[600px] flex items-center justify-center overflow-hidden pt-24">
+            <div className="absolute inset-0 z-0">
+                <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.img
+                        key={backgroundImages[activeImageIndex]}
+                        initial={{ x: "100%", opacity: 0 }}
+                        animate={{ x: "0%", opacity: 1 }}
+                        exit={{ x: "-100%", opacity: 0 }}
+                        transition={{ duration: 2.5, ease: [0.33, 1, 0.68, 1] }}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        src={backgroundImages[activeImageIndex]}
+                        alt="Background Slideshow"
+                    />
+                </AnimatePresence>
+                <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/40 dark:from-black/30 dark:to-black/80 z-10"></div>
             </div>
-        </div>
 
-        <div className="absolute bottom-12 right-8 z-20 hidden lg:block group cursor-pointer">
-            <div className="relative w-32 h-24 overflow-hidden rounded border border-white/30 hover:border-white transition-all duration-300">
-                <img alt="Gallery Preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGcgcSfQ3T5FEqiMRT0GulxTN2MqKukhPvuj3BXUl-wwm5C89YoBXSvepBXSiMJkYI_-U4yQPEaB8II8LaqO6evUw9P19dBncInn0L1qjSPfaPdEcasFbagVOx6GNLn8gtB7NlGhs64u9rKLrkFu6B87NyUbGEjWlbe0Kik7fXZY9gDtOhR9tmQypyEe9bJJTWxYEGKMw8dRcTvkCwbti_WiEHSFBF37d9NL2cMiwoUJHk4YRGAa5PW_DRMEcuq00E3HujcV2ar7CU" />
-            </div>
-            <p className="text-white text-[10px] uppercase tracking-widest mt-2 text-right">View Gallery</p>
-        </div>
-
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-4 flex flex-col items-center">
-            <h2 className="text-white text-[10px] md:text-sm uppercase tracking-[0.4em] mb-4 font-medium text-shadow opacity-90">The Art of Living</h2>
-            <h1 className="font-serif text-4xl md:text-6xl lg:text-8xl text-white font-medium tracking-tight mb-8 leading-none drop-shadow-lg text-center">
-                AAROHI<span className="font-light opacity-80">HOTELS</span>
-            </h1>
-
-            <div className="w-full max-w-4xl mx-auto animate-fade-in-up">
-                <div className="flex justify-center mb-0 scale-90 md:scale-100 transform origin-bottom">
-                    <button className="px-6 md:px-8 py-2 md:py-3 bg-white/90 backdrop-blur-md text-black text-[10px] md:text-xs uppercase tracking-widest font-bold rounded-t-lg border-b-2 border-black">Book a Room</button>
-                    <button className="px-6 md:px-8 py-2 md:py-3 bg-black/40 backdrop-blur-md text-white hover:bg-white/90 hover:text-black text-[10px] md:text-xs uppercase tracking-widest font-bold rounded-t-lg border-b-2 border-transparent transition-all">Book a Hall</button>
-                </div>
-                <div className="glass-panel p-4 md:p-6 rounded-b-lg rounded-tr-lg shadow-glass flex flex-col md:flex-row gap-4 md:gap-6 items-center md:items-end justify-between scale-95 md:scale-100">
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
-                        <div className="flex flex-col items-start border-b md:border-b-0 md:border-r border-gray-300/30 pb-2 md:pb-0 md:pr-4">
-                            <label className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mb-1">Check In</label>
-                            <input className="bg-transparent border-none text-gray-900 p-0 focus:ring-0 w-full cursor-pointer font-sans text-xs font-medium" type="date" />
-                        </div>
-                        <div className="flex flex-col items-start border-b md:border-b-0 md:border-r border-gray-300/30 pb-2 md:pb-0 md:pr-4">
-                            <label className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mb-1">Check Out</label>
-                            <input className="bg-transparent border-none text-gray-900 p-0 focus:ring-0 w-full cursor-pointer font-sans text-xs font-medium" type="date" />
-                        </div>
-                        <div className="flex flex-col items-start col-span-2 md:col-span-1">
-                            <label className="text-[9px] text-gray-600 uppercase tracking-widest font-bold mb-1">Guests</label>
-                            <select className="bg-transparent border-none text-gray-900 p-0 focus:ring-0 w-full cursor-pointer font-sans text-xs font-medium">
-                                <option value="1">1 Guest</option>
-                                <option value="2">2 Guests</option>
-                                <option value="3">3 Guests</option>
-                                <option value="4+">4+ Guests</option>
-                            </select>
-                        </div>
+            <div className="absolute top-32 right-8 md:right-16 z-20 hidden md:block">
+                <div className="flex flex-col items-end space-y-6 text-white/90 drop-shadow-md text-right">
+                    <div>
+                        <p className="text-4xl font-serif">15+</p>
+                        <p className="text-[10px] uppercase tracking-widest opacity-80">Years of Excellence</p>
                     </div>
-                    <button className="w-full md:w-auto bg-black hover:bg-gray-800 text-white px-8 py-3 rounded uppercase text-[9px] tracking-widest font-bold transition-all duration-300 shadow-lg whitespace-nowrap">
-                        Check Availability
-                    </button>
+                    <div>
+                        <p className="text-4xl font-serif">50k+</p>
+                        <p className="text-[10px] uppercase tracking-widest opacity-80">Guests Served</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-            <span className="material-icons-outlined text-white/80 text-2xl">arrow_downward</span>
-        </div>
-    </header>
-);
+            <Link className="absolute bottom-12 right-8 z-20 hidden lg:block group cursor-pointer" to="/gallery">
+                <div className="relative w-32 h-24 overflow-hidden rounded border border-white/30 hover:border-white transition-all duration-300">
+                    <img alt="Gallery Preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGcgcSfQ3T5FEqiMRT0GulxTN2MqKukhPvuj3BXUl-wwm5C89YoBXSvepBXSiMJkYI_-U4yQPEaB8II8LaqO6evUw9P19dBncInn0L1qjSPfaPdEcasFbagVOx6GNLn8gtB7NlGhs64u9rKLrkFu6B87NyUbGEjWlbe0Kik7fXZY9gDtOhR9tmQypyEe9bJJTWxYEGKMw8dRcTvkCwbti_WiEHSFBF37d9NL2cMiwoUJHk4YRGAa5PW_DRMEcuq00E3HujcV2ar7CU" />
+                </div>
+                <p className="text-white text-[10px] uppercase tracking-widest mt-2 text-right">View Gallery</p>
+            </Link>
+
+            <div className="relative z-10 w-full max-w-6xl mx-auto px-4 flex flex-col items-center">
+                <h2 className="text-white text-[10px] md:text-sm uppercase tracking-[0.4em] mb-4 font-medium text-shadow opacity-90">The Art of Living</h2>
+                <h1 className="font-serif text-4xl md:text-6xl lg:text-8xl text-white font-medium tracking-tight mb-8 leading-none drop-shadow-lg text-center">
+                    HOTEL-<span className="font-light opacity-80">AAROHI</span>
+                </h1>
+
+                <div className="w-full max-w-4xl mx-auto animate-fade-in-up">
+                    <div className="flex justify-center mb-0 scale-90 md:scale-100 transform origin-bottom">
+                        <button
+                            onClick={() => setBookingType('room')}
+                            className={`px-6 md:px-8 py-2 md:py-3 text-[10px] md:text-xs uppercase tracking-widest font-bold rounded-t-lg border-b-2 transition-all ${bookingType === 'room' ? 'bg-white/90 text-black border-black' : 'bg-black/40 text-white hover:bg-white/90 hover:text-black border-transparent'}`}
+                        >
+                            Book a Room
+                        </button>
+                        <button
+                            onClick={() => setBookingType('hall')}
+                            className={`px-6 md:px-8 py-2 md:py-3 text-[10px] md:text-xs uppercase tracking-widest font-bold rounded-t-lg border-b-2 transition-all ${bookingType === 'hall' ? 'bg-white/90 text-black border-black' : 'bg-black/40 text-white hover:bg-white/90 hover:text-black border-transparent'}`}
+                        >
+                            Book a Hall
+                        </button>
+                    </div>
+
+                    <div className="glass-panel p-4 md:p-6 rounded-b-lg rounded-tr-lg shadow-glass flex flex-col md:flex-row gap-4 md:gap-6 items-center md:items-end justify-between scale-95 md:scale-100 transition-all duration-500">
+                        {bookingType === 'room' ? (
+                            <>
+                                <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
+                                    <div className="flex flex-col items-start border-b md:border-b-0 md:border-r border-gray-300/30 pb-2 md:pb-0 md:pr-4">
+                                        <CustomDatePicker label="Check In" value={checkIn} onChange={setCheckIn} />
+                                    </div>
+                                    <div className="flex flex-col items-start border-b md:border-b-0 md:border-r border-gray-300/30 pb-2 md:pb-0 md:pr-4">
+                                        <CustomDatePicker label="Check Out" value={checkOut} onChange={setCheckOut} />
+                                    </div>
+                                    <div className="flex flex-col items-start col-span-2 md:col-span-1">
+                                        <CustomSelect
+                                            label="Guests"
+                                            value={guests}
+                                            options={['1 Guest', '2 Guests', '3 Guests', '4+ Guests']}
+                                            onChange={setGuests}
+                                        />
+                                    </div>
+                                </div>
+                                <button className="w-full md:w-auto bg-black hover:bg-gray-800 text-white px-8 py-3 rounded uppercase text-[9px] tracking-widest font-bold transition-all duration-300 shadow-lg whitespace-nowrap">
+                                    Check Availability
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
+                                    <div className="flex flex-col items-start border-b md:border-b-0 md:border-r border-gray-300/30 pb-2 md:pb-0 md:pr-4 col-span-2 md:col-span-1">
+                                        <CustomSelect
+                                            label="Select Hall"
+                                            value={selectedHall}
+                                            options={['Hall A (200 Seats)', 'Hall B (100 Seats)']}
+                                            onChange={setSelectedHall}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col items-start border-b md:border-b-0 md:border-r border-gray-300/30 pb-2 md:pb-0 md:pr-4">
+                                        <CustomDatePicker label="Start Date" value={eventDate} onChange={setEventDate} />
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <CustomSelect
+                                            label="Start Time"
+                                            value={startTime}
+                                            options={['08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM']}
+                                            onChange={setStartTime}
+                                            icon="access_time"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex items-center w-full md:w-auto h-fit">
+                                    <button className="flex-1 md:flex-none bg-black hover:bg-gray-800 text-white px-8 py-3 rounded uppercase text-[9px] tracking-widest font-bold transition-all duration-300 shadow-lg whitespace-nowrap">
+                                        Check Availability
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+                <span className="material-icons-outlined text-white/80 text-2xl">arrow_downward</span>
+            </div>
+        </header>
+    );
+};
 
 const Features = () => (
     <section className="bg-snow-white dark:bg-[#121212] py-16 border-b border-gray-100 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 <div className="text-center md:text-right border-r-0 md:border-r border-gray-200 dark:border-gray-800 pr-0 md:pr-12">
-                    <span className="text-gray-400 font-sans text-xs uppercase tracking-widest block mb-3">Tonight's Exclusive</span>
-                    <h3 className="text-secondary dark:text-white text-4xl font-serif mb-3">Chef's Tasting Menu</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed font-light max-w-md ml-auto">A 7-course journey through local terroir paired with vintage wines, curated by Chef Alexander.</p>
+                    <span className="text-gray-400 font-sans text-xs uppercase tracking-widest block mb-3">Culinary Excellence</span>
+                    <h3 className="text-secondary dark:text-white text-4xl font-serif mb-3">Authentic Thakali</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed font-light max-w-md ml-auto">Hotel Aarohi is proud to serve the best Thakali in Chandrapur—an authentic taste of heritage crafted with premium local ingredients.</p>
                 </div>
                 <div className="text-center md:text-left pl-0 md:pl-12">
-                    <span className="text-gray-400 font-sans text-xs uppercase tracking-widest block mb-3">Seasonal Ritual</span>
-                    <h3 className="text-secondary dark:text-white text-4xl font-serif mb-3">Winter Solstice Spa</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed font-light max-w-md mr-auto">Hot stone massage & hydrotherapy circuit access included. Restore your balance.</p>
+                    <span className="text-gray-400 font-sans text-xs uppercase tracking-widest block mb-3">Special Moments</span>
+                    <h3 className="text-secondary dark:text-white text-4xl font-serif mb-3">Room Decoration</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed font-light max-w-md mr-auto">Celebrating a special occasion? Let us curate an exquisite room decoration to make your stay truly memorable on your big day.</p>
                 </div>
             </div>
         </div>
@@ -146,7 +415,7 @@ const Suites = () => (
                     <h2 className="font-serif text-5xl text-secondary dark:text-white mt-4">Luxury Rooms & Suites</h2>
                 </div>
                 <div className="hidden md:block">
-                    <button className="border-b border-black dark:border-white pb-1 text-xs uppercase tracking-widest hover:text-gray-500 transition-colors">View All Suites</button>
+                    <Link className="border-b border-black dark:border-white pb-1 text-xs uppercase tracking-widest hover:text-gray-500 transition-colors" to="/rooms">View All Suites</Link>
                 </div>
             </div>
 
@@ -179,22 +448,22 @@ const Suites = () => (
                             <div className="flex gap-6 py-4 border-t border-gray-100 dark:border-gray-800 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                 {suite.features.map((f, i) => <span key={i}>{f}</span>)}
                             </div>
-                            <button className="w-full mt-6 bg-transparent border border-gray-200 dark:border-gray-700 text-secondary dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black py-3 uppercase text-[10px] tracking-widest transition-all">
+                            <Link className="w-full mt-6 bg-transparent border border-gray-200 dark:border-gray-700 text-secondary dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black py-3 uppercase text-[10px] tracking-widest transition-all text-center block" to="/rooms">
                                 Reserve
-                            </button>
+                            </Link>
                         </div>
                     </article>
                 ))}
             </div>
 
             <div className="mt-20 flex justify-center">
-                <button className="group relative inline-flex items-center justify-center px-8 py-4 overflow-hidden font-medium text-black transition duration-300 ease-out border border-gray-900 rounded-sm shadow-md bg-white dark:bg-black dark:text-white dark:border-white">
+                <Link className="group relative inline-flex items-center justify-center px-8 py-4 overflow-hidden font-medium text-black transition duration-300 ease-out border border-gray-900 rounded-sm shadow-md bg-white dark:bg-black dark:text-white dark:border-white" to="/rooms">
                     <span className="absolute inset-0 flex items-center justify-center w-full h-full text-white duration-300 -translate-x-full bg-black dark:bg-white dark:text-black group-hover:translate-x-0 ease">
                         <span className="material-icons-outlined">arrow_forward</span>
                     </span>
                     <span className="absolute flex items-center justify-center w-full h-full text-black transition-all duration-300 transform group-hover:translate-x-full ease dark:text-white text-xs uppercase tracking-widest font-bold">View All Accommodations</span>
                     <span className="relative invisible text-xs uppercase tracking-widest font-bold">View All Accommodations</span>
-                </button>
+                </Link>
             </div>
         </div>
     </section>
@@ -221,9 +490,9 @@ const Dining = () => {
                             prepared with fresh local ingredients by our master chefs.
                         </p>
 
-                        <button className="text-secondary dark:text-white uppercase text-[10px] tracking-widest font-bold border-b border-black dark:border-white pb-1 hover:opacity-60 transition-all">
+                        <Link className="text-secondary dark:text-white uppercase text-[10px] tracking-widest font-bold border-b border-black dark:border-white pb-1 hover:opacity-60 transition-all inline-block" to="/restaurant">
                             View Collection
-                        </button>
+                        </Link>
                     </div>
 
                     {/* Right Side: Blackboard Menu */}
@@ -300,7 +569,7 @@ const Gallery = () => {
                         </div>
                     ))}
                     <div className="gallery-item bg-white flex items-center justify-center border border-gray-100">
-                        <a className="text-accent uppercase tracking-widest text-xs font-bold border-b border-accent pb-1 hover:text-black hover:border-black transition-colors" href="#">View Full Gallery</a>
+                        <Link className="text-accent uppercase tracking-widest text-xs font-bold border-b border-accent pb-1 hover:text-black hover:border-black transition-colors" to="/gallery">View Full Gallery</Link>
                     </div>
                 </div>
             </div>
@@ -345,7 +614,7 @@ const Services = () => (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
                 <div>
                     <h2 className="font-serif text-4xl mb-12 uppercase tracking-wide">Our Services</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-12">
+                    <div className="grid grid-cols-2 gap-x-4 md:gap-x-8 gap-y-10 md:gap-y-12">
                         {[
                             { id: '01', title: 'Michelin Dining', desc: 'Elegant, high-impact culinary masterpieces.', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuArjmri9wQ4baZVMPfzyJDR0CjY9GkDI1ESlZOe-eHsFf5yJAh16P6U0V7Y6DbaV5E0bjAlWTOHBpLm4FS3QmM3ux_9kqhHNl6eQtfIZ6ooCnnUjLcrPy0R6c_PqWd-BdZLHcAq3siEgz1qDEbF6dpkW6RQQrYmpKCcjNA69k7i9tEnDJoffBAGgSniR70Cn3KGzMb6tUqurrv-6enVicxb7n-GPvoBx9IaxPeAo-T5g2ltLvoLcqhjR5AGfdqXOM-FE6yUr6w5w4EN' },
                             { id: '02', title: 'Holistic Spa', desc: 'Spaces designed to harmonize mind and body.', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDZh87yFJlXuyC2J1W23_0WRhN-evdbbUYhFVXyPZE7ArG3R8ZUUafmGMX75vB2tyhVWWgpTG_H0R_ruopIVpeeonNhfwOEIhl5kt74GP_a04uSe5B0rIa3xyqQsYdt5EarcchCszzic65nhWB8v1nUAA4HKrwpHdGDaev7hh63zB6ojwhSKQV_xgPpTfZd2OCV0YeSLc54YZRCiWgq6MhRVo1lfVPDd6aLXOKCEWf3ICbIdUF9QW9fr8NiK8ZIlVqkWw0KH-LCKyrO' },
@@ -353,14 +622,14 @@ const Services = () => (
                             { id: '04', title: 'Space Planning', desc: 'Purposeful interiors designed for flow and balance.', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD20qMW5men1cFFZ89uitJ2OqRzV1XOhUPFsuZi9C4PBQszd8gr-DSMg0IqJIRrayH1ODAjgwjThLlKiUGNHBvWx6Tc2NHOYINcsfKA1sXzaABRbfcxUfR28z3-zKTWammhiggnJizrezXuG7gOAKYIEsbvnvoaxrKdYK479TPtX7YhW85WwNKV3gUkvTsFyRP5R7UXFt8LORF6j13fzzzOLXUCSJNCeXTr5c6f_dFZs9p4QCm7aS2umBKhFzS9_ALzrC4C1LYUHuUc' }
                         ].map(service => (
                             <div key={service.id} className="group">
-                                <div className="overflow-hidden mb-6">
-                                    <img alt={service.title} className="w-full h-56 object-cover grayscale group-hover:grayscale-0 transition duration-700" src={service.img} />
+                                <div className="overflow-hidden mb-4 md:mb-6">
+                                    <img alt={service.title} className="w-full h-32 md:h-56 object-cover grayscale group-hover:grayscale-0 transition duration-700" src={service.img} />
                                 </div>
-                                <div className="flex items-baseline gap-4 mb-3">
-                                    <span className="text-xs font-bold text-gray-300">{service.id}</span>
-                                    <h3 className="text-lg font-serif uppercase tracking-wider">{service.title}</h3>
+                                <div className="flex items-baseline gap-2 md:gap-4 mb-2 md:mb-3">
+                                    <span className="text-[10px] md:text-xs font-bold text-gray-300">{service.id}</span>
+                                    <h3 className="text-sm md:text-lg font-serif uppercase tracking-wider">{service.title}</h3>
                                 </div>
-                                <p className="text-gray-500 text-sm leading-relaxed font-light">{service.desc}</p>
+                                <p className="text-gray-500 text-[10px] md:text-sm leading-relaxed font-light">{service.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -400,8 +669,54 @@ const Services = () => (
     </section>
 );
 
+const Halls = () => (
+    <section className="py-24 bg-snow-white dark:bg-[#0F0F0F]" id="halls">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16">
+                <div className="mb-6 md:mb-0">
+                    <span className="text-gray-400 uppercase tracking-[0.2em] text-xs font-bold">Event Spaces</span>
+                    <h2 className="font-serif text-4xl md:text-5xl text-secondary dark:text-white mt-4">Our Halls</h2>
+                </div>
+            </div>
+
+            <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x md:snap-none scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                {[
+                    { title: 'Hall A', features: ['Full AC', 'Stage', '250 Capacity'], img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDwWfJL2u9x8IC9MtL4ch1423YeMRtcqyN68EbmRR1akt_qYW3JlcGGsgUfPNa-sIGcsqWtq7oNFi2RKhRHQotoawMXZlElMlNDf-sPUUT6-GkOecm8kiy58me2aMUbwpPevX7_5GXqxJ6_JEIUT6249EMndSU0tGgElmAtSaZkUCi4gbtugl-THpgsstWkUxS21nzpu96SBSTB7LtEZfNznBlm_ctQ2RKQ4-3zRVmEK-m5bv2yKv10erylZNsqpQMeDHYAgKrLF9J7' },
+                    { title: 'Hall B', features: ['Full AC', 'Lounge', '100 Capacity'], img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCT-o2Xx-kAWjEy_FtCVN88cpI_EhgcD28CHAB742YsOpmKP2ybTjHd2MNMyWxHWJo0latjR3I3Cz-sSJR-S38OxF2oCcfL0iqeW4AEFM58OnBb9qu0IO6DM9f6Kk2AnKAyOPhi5akSQ8Wr9hZEKL7ccdKgeqz1LkXEw4O45r0HD6TYwFlsNK2-5VrLRLMNhRWxFNB_n3knnXXP_0EdySpGWXK5-ZFGu1-RDFFs9dkseNblDyjo6wr92eAPvmOb3ygu8TdpEG-4BG-Q' }
+                ].map((hall, idx) => (
+                    <article key={idx} className="group relative min-w-[300px] w-[85vw] md:w-auto md:min-w-0 snap-center bg-white dark:bg-[#141414] transition-all duration-500 overflow-hidden cursor-pointer">
+                        {/* Premium Golden Trace Overlay */}
+                        <div className="absolute inset-0 pointer-events-none z-30">
+                            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <rect
+                                    x="0" y="0" width="100" height="100"
+                                    pathLength="1"
+                                    vectorEffect="non-scaling-stroke"
+                                    className="stroke-primary stroke-2 fill-none border-trace-svg"
+                                />
+                            </svg>
+                        </div>
+                        <div className="relative overflow-hidden aspect-[16/9]">
+                            <img alt={hall.title} className="w-full h-full object-cover transition duration-700" src={hall.img} />
+                        </div>
+                        <div className="pt-6 pb-6 px-6">
+                            <h3 className="font-serif text-2xl text-secondary dark:text-white uppercase tracking-wider mb-4">{hall.title}</h3>
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 py-4 border-t border-gray-100 dark:border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                                {hall.features.map((f, i) => <span key={i}>{f}</span>)}
+                            </div>
+                            <button className="w-full mt-4 bg-transparent border border-black/20 dark:border-white/20 text-secondary dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black py-3 uppercase text-[9px] tracking-[0.2em] font-bold transition-all">
+                                Book Hall
+                            </button>
+                        </div>
+                    </article>
+                ))}
+            </div>
+        </div>
+    </section>
+);
+
 const Journal = () => (
-    <section className="py-24 bg-snow-white dark:bg-[#0A0A0A]">
+    <section className="py-24 bg-snow-white dark:bg-[#0A0A0A]" id="journal">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-wrap justify-center gap-16 mb-24 opacity-40 hover:opacity-100 transition-all duration-700 grayscale">
                 <div className="flex flex-col items-center gap-3 text-center">
@@ -423,7 +738,7 @@ const Journal = () => (
                     <span className="text-gray-400 uppercase tracking-widest text-xs font-bold">From the Blog</span>
                     <h2 className="font-serif text-4xl text-secondary dark:text-white mt-3">The Journal</h2>
                 </div>
-                <a className="hidden md:inline-block text-secondary dark:text-white uppercase text-xs tracking-widest border-b border-transparent hover:border-black dark:hover:border-white pb-1 transition-all" href="#">View All Stories</a>
+                <Link className="hidden md:inline-block text-secondary dark:text-white uppercase text-xs tracking-widest border-b border-transparent hover:border-black dark:hover:border-white pb-1 transition-all" to="/blog">View All Stories</Link>
             </div>
 
             <div className="grid grid-cols-3 gap-6 md:gap-8">
@@ -455,7 +770,7 @@ const Journal = () => (
                         </div>
                         <h3 className="font-serif text-base md:text-xl lg:text-2xl text-secondary dark:text-white mb-3 group-hover:text-primary transition-colors uppercase leading-tight">{post.title}</h3>
                         <p className="hidden md:block text-gray-500 dark:text-gray-400 font-light mb-4 line-clamp-2 text-xs leading-relaxed">Curated journal entries exploring the intersection of luxury and silence.</p>
-                        <button className="text-[9px] uppercase tracking-widest font-bold border-b border-black dark:border-white pb-1 transition-all">Read More</button>
+                        <Link className="text-[9px] uppercase tracking-widest font-bold border-b border-black dark:border-white pb-1 transition-all inline-block" to="/blog">Read More</Link>
                     </article>
                 ))}
             </div>
@@ -463,25 +778,75 @@ const Journal = () => (
     </section>
 );
 
-const Map = () => (
-    <section className="h-[500px] w-full relative bg-gray-900 overflow-hidden">
-        <img alt="Map" className="w-full h-full object-cover opacity-50 grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLd7u4stdwq-jyFc5OB9XTls__s16ViwW6K9uDXCxE_kpsWwBn0cDYRi0R_Ohc3qrwwnEmjqZbDIuZD04LiUyHipDb8x-VCqdTNHoGW2p2JspiXWCWfIhRx7xWsqbkETmF6-sbp2v3T41II35Crqk8pur3-r2C7tfDhUESWGLV0yaz3IiH7wfwuBhWwIiSHmOQqfM_i-89EmeTQte0i6FB5NARtmt4S44VW9XRKVK5BJvNu8LoZBfk-wQXXdi7MMLyDU-pY9OPkE-m" />
-        <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-white/90 dark:bg-black/80 p-12 text-center backdrop-blur-md max-w-lg mx-4 shadow-2xl">
-                <span className="material-icons-outlined text-black dark:text-white text-4xl mb-6">near_me</span>
-                <h3 className="text-secondary dark:text-white font-serif text-3xl mb-4">Locate Sanctuary</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 font-light leading-relaxed">Nestled in the pristine forests of Quebec, a 45-minute helicopter ride from Montreal.</p>
-                <button className="text-black dark:text-white border border-black dark:border-white px-8 py-3 text-[10px] uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">Get Directions</button>
-            </div>
-        </div>
-    </section>
-);
+const Map = () => {
+    const [showMap, setShowMap] = useState(false);
+
+    return (
+        <section className={`relative transition-all duration-1000 ease-in-out ${showMap ? 'h-[600px]' : 'h-[500px]'} w-full bg-black overflow-hidden`} id="location">
+            {showMap ? (
+                <div className="w-full h-full relative animate-in fade-in duration-1000">
+                    <iframe
+                        title="Hotel Aarohi Earth View"
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d56816.56022806488!2d85.27623364863284!3d27.123707099999994!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb612b995bca95%3A0x6d2d3b02f3e2904d!2sHotel%20Aarohi!5e0!3m2!1sen!2snp!4v1772537258736!5m2!1sen!2snp&maptype=satellite&hl=en"
+                        className="w-full h-full border-0 grayscale-[10%] contrast-[1.1]"
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                    ></iframe>
+
+                    {/* Map UI Overlay */}
+                    <div className="absolute top-0 right-0 p-8 flex flex-col items-end gap-6 pointer-events-none">
+                        <div className="pointer-events-auto">
+                            <a
+                                href="https://www.google.com/maps/dir/?api=1&destination=Hotel+Aarohi+Chandrapur+Rautahat"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-white text-black px-8 py-4 text-[10px] uppercase font-bold tracking-[0.2em] shadow-2xl hover:bg-black hover:text-white transition-all block text-center"
+                            >
+                                Get Directions
+                            </a>
+                        </div>
+
+                        <div className="bg-black/80 backdrop-blur-md px-4 py-3 border border-white/10 pointer-events-auto text-right w-fit">
+                            <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Location</p>
+                            <h4 className="text-white font-serif text-base leading-tight mt-1 whitespace-nowrap">Chandrapur, Rautahat</h4>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="w-full h-full relative">
+                    <img
+                        alt="Himalayan Topography"
+                        className="w-full h-full object-cover opacity-30 grayscale blur-sm scale-105"
+                        src="https://images.unsplash.com/photo-1544735032-6a51bf72864d?auto=format&fit=crop&q=80"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center max-w-2xl px-6">
+                            <div className="inline-block w-12 h-[1px] bg-accent mb-8"></div>
+                            <h3 className="text-white font-serif text-4xl md:text-5xl mb-6 tracking-wide uppercase">Locate Sanctuary</h3>
+                            <p className="text-gray-400 text-sm md:text-base mb-12 font-light leading-relaxed max-w-lg mx-auto">
+                                Hotel Aarohi is located at 49F3+F84, Mahendra Hwy, Chandrapur 44515, Nepal. <br />
+                                <span className="text-gray-500 italic mt-2 block">A haven of tranquility at the heart of historical grandeur.</span>
+                            </p>
+                            <button
+                                onClick={() => setShowMap(true)}
+                                className="group relative px-10 py-5 bg-white text-black text-[10px] uppercase tracking-[0.4em] font-bold hover:bg-accent hover:text-white transition-all duration-500 shadow-xl"
+                            >
+                                To See the Exact Location : View Map
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </section>
+    );
+};
 const Footer = () => (
     <footer className="bg-white dark:bg-[#050505] text-secondary dark:text-white pt-24 pb-12 border-t border-gray-100 dark:border-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
                 <div>
-                    <h2 className="font-serif text-2xl font-bold mb-8 tracking-widest">AAROHI<span className="font-light">HOTELS</span></h2>
+                    <h2 className="font-serif text-2xl font-bold mb-8 tracking-widest uppercase">HOTEL<span className="font-light">AAROHI</span></h2>
                     <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8 font-light">
                         A sanctuary of silence and style. Redefining luxury hospitality through architectural brilliance and impeccable service.
                     </p>
@@ -497,11 +862,11 @@ const Footer = () => (
                     <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400 font-light">
                         <li className="flex items-start">
                             <span className="material-icons-outlined text-gray-400 mr-3 text-base">location_on</span>
-                            1200 Borealis Avenue,<br />Quebec, Canada
+                            Mahendra Hwy, Chandrapur 44515,<br />Rautahat, Nepal
                         </li>
                         <li className="flex items-center">
                             <span className="material-icons-outlined text-gray-400 mr-3 text-base">phone</span>
-                            +1 (555) 123-4567
+                            +977 123-4567890
                         </li>
                         <li className="flex items-center">
                             <span className="material-icons-outlined text-gray-400 mr-3 text-base">email</span>
@@ -513,9 +878,11 @@ const Footer = () => (
                 <div>
                     <h4 className="text-gray-900 dark:text-white uppercase tracking-widest text-[10px] font-bold mb-8">Explore</h4>
                     <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400 font-light">
-                        {['Our Story', 'Suites & Villas', 'Dining', 'Wellness & Spa', 'Sustainability'].map(item => (
-                            <li key={item}><a className="hover:text-black dark:hover:text-white transition-colors" href="#">{item}</a></li>
-                        ))}
+                        <li><Link className="hover:text-black dark:hover:text-white transition-colors" to="/rooms">Suites & Villas</Link></li>
+                        <li><Link className="hover:text-black dark:hover:text-white transition-colors" to="/restaurant">Fine Dining</Link></li>
+                        <li><Link className="hover:text-black dark:hover:text-white transition-colors" to="/gallery">Gallery</Link></li>
+                        <li><Link className="hover:text-black dark:hover:text-white transition-colors" to="/blog">The Journal</Link></li>
+                        <li><a className="hover:text-black dark:hover:text-white transition-colors" href="#">Our Story</a></li>
                     </ul>
                 </div>
 
@@ -542,29 +909,39 @@ const Footer = () => (
 
 const Home = () => (
     <main className="font-sans antialiased text-secondary bg-snow-white dark:bg-[#0F0F0F] dark:text-ivory transition-colors duration-300">
-        <Navbar />
         <Header />
         <Features />
         <Suites />
         <Dining />
         <Services />
+        <Halls />
         <Gallery />
         <Journal />
         <Map />
-        <Footer />
     </main>
 );
 
 function App() {
+    const location = useLocation();
+    const isDashboard = location.pathname.startsWith('/dashboard');
+
     return (
         <>
+            <ScrollToTop />
             <SEO
                 title="Aarohi | Snow-white Luxury"
                 description="Experience the pinnacle of modern luxury at Aarohi Hotels. 7-star boutique experience featuring glass architecture and warm minimalism."
             />
+            {!isDashboard && <Navbar />}
             <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/rooms" element={<RoomsPage />} />
+                <Route path="/restaurant" element={<RestaurantPage />} />
+                <Route path="/gallery" element={<GalleryPage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/dashboard/*" element={<DashboardPage />} />
             </Routes>
+            {!isDashboard && <Footer />}
         </>
     );
 }
