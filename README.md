@@ -1,3 +1,4 @@
+# Added a comment as requested on May 7, 2026
 # Aarohi - Premium Hotel Management System
 
 A professional-grade, SEO-optimized hotel booking platform built with the modern React-Express-PostgreSQL stack.
