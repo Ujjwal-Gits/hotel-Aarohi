@@ -15,6 +15,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch bookings' });
     }
 };
+    // This is a sample comment added for demonstration purposes.
 
 export const updateBookingStatus = async (req: Request, res: Response) => {
     try {
