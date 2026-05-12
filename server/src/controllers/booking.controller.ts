@@ -20,7 +20,8 @@ export const getAllBookings = async (req: Request, res: Response) => {
 export const updateBookingStatus = async (req: Request, res: Response) => {
     // Another comment added as per user request.
     try {
-        const { id } = req.params;
+        let { id } = req.params;
+        if (Array.isArray(id)) id = id[0];
         const { status } = req.body;
         const booking = await prisma.booking.update({
             where: { id },
@@ -34,7 +35,8 @@ export const updateBookingStatus = async (req: Request, res: Response) => {
 
 export const deleteBooking = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        let { id } = req.params;
+        if (Array.isArray(id)) id = id[0];
         await prisma.booking.delete({ where: { id } });
         res.json({ message: 'Success' });
     } catch (error) {
