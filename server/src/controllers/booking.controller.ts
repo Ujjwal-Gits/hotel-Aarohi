@@ -18,6 +18,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
     // This is a sample comment added for demonstration purposes.
 
 export const updateBookingStatus = async (req: Request, res: Response) => {
+    // Another comment added as per user request.
     try {
         const { id } = req.params;
         const { status } = req.body;
