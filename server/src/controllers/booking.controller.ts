@@ -15,10 +15,10 @@ export const getAllBookings = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch bookings' });
     }
 };
-    // This is a sample comment added for demonstration purposes.
+// Retrieves all bookings from the database, including user and room details, and returns them in descending order of creation.
 
 export const updateBookingStatus = async (req: Request, res: Response) => {
-    // Another comment added as per user request.
+    // Updates the status of a specific booking based on the provided booking ID and new status value.
     try {
         let { id } = req.params;
         if (Array.isArray(id)) id = id[0];
